@@ -398,7 +398,10 @@ let recipePortions = 4;
 function initSupabase() {
   if (SUPABASE_URL !== 'TUTAJ_WKLEJ_URL' && SUPABASE_ANON_KEY !== 'TUTAJ_WKLEJ_KLUCZ') {
     try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Zmieniamy window.supabase na window.supabase.createClient, 
+      // ale przypisujemy to do globalnego obiektu window.supabaseApp, żeby nie było konfliktu nazw
+      window.supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabase = window.supabaseApp; // Nadpisujemy zmienną globalną bez słowa const
       useSupabase = true;
       console.log('✅ Supabase połączone!');
     } catch(e) { console.warn('Supabase init failed, używam LocalStorage', e); }
