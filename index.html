@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Działka 2025 🌿</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap');
+    * { font-family: 'Nunito', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .tab-active { background: #e8f5e9; color: #2e7d32; border-bottom: 3px solid #4caf50; }
+    .status-want { background: #fff3e0; border-left: 4px solid #ff7043; }
+    .status-cart { background: #fff8e1; border-left: 4px solid #ffa726; }
+    .status-have { background: #e8f5e9; border-left: 4px solid #66bb6a; }
+    .badge-want { background:#ff7043; color:#fff; }
+    .badge-cart { background:#ffa726; color:#fff; }
+    .badge-have { background:#66bb6a; color:#fff; }
+    .filter-active { background:#4caf50; color:#fff; }
+    .profile-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(76,175,80,0.25); }
+    .profile-card { transition: all 0.2s ease; }
+    .slide-in { animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .modal-bg { background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); }
+    .recipe-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 3px; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#323232; color:#fff; padding:10px 22px; border-radius:999px; font-size:0.88rem; z-index:9999; animation:fadeInUp 0.3s ease; }
+    @keyframes fadeInUp { from{opacity:0;transform:translate(-50%,12px);}to{opacity:1;transform:translate(-50%,0);} }
+  </style>
+</head>
+<body class="bg-[#f7f9f3] min-h-screen">
+
+<script>
+// ============================================================
+//  KONFIGURACJA SUPABASE – wklej swoje dane poniżej
+// ============================================================
+const SUPABASE_URL = 'https://wmqqlggjolqdghpinxja.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_hig0T08R0ViUmiB8Jtt24Q_7EsirSY-';
+
+/*
+══════════════════════════════════════════════
+  SQL DO WKLEJENIA W SUPABASE SQL EDITOR
+══════════════════════════════════════════════
+
+-- Tabela listy zakupów
+create table if not exists shopping_list (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  added_by text,
+  status text default 'want',  -- 'want' | 'cart' | 'have'
+  tags text[] default '{}',
+  created_at timestamptz default now()
+);
+alter table shopping_list enable row level security;
+create policy "public rw" on shopping_list for all using (true) with check (true);
+
+-- Tabela wydatków
+create table if not exists expenses (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  amount numeric not null,
+  paid_by text not null,
+  created_at timestamptz default now()
+);
+alter table expenses enable row level security;
+create policy "public rw" on expenses for all using (true) with check (true);
+
+══════════════════════════════════════════════
+*/
+
+// ============================================================
+//  STAŁA BAZA PRZEPISÓW
+// ============================================================
+const RECIPES = [
+  {
+    id: 1,
+    name: "Makaron z sosem pomidorowym i bazylią",
+    time: "20 min",
+    emoji: "🍝",
+    tags: ["wegetariańskie","bezglutenowe-opcja"],
+    source: "https://www.anniagotuje.pl/makaron-pomidorowy",
+    desc: "Klasyczny, szybki obiad z prostych składników. Sos robi się sam, a smak jak z włoskiej trattorni!",
+    ingredients: [
+      { name: "Makaron (spaghetti)", amount: 100, unit: "g", key: "makaron" },
+      { name: "Passata pomidorowa", amount: 200, unit: "ml", key: "passata" },
+      { name: "Czosnek", amount: 2, unit: "ząbki", key: "czosnek" },
+      { name: "Oliwa z oliwek", amount: 2, unit: "łyżki", key: "oliwa" },
+      { name: "Świeża bazylia", amount: 5, unit: "listków", key: "bazylia" },
+      { name: "Sól, pieprz", amount: 1, unit: "szczypta", key: "sol" },
+      { name: "Parmezan", amount: 20, unit: "g", key: "parmezan" }
+    ],
+    steps: [
+      "Zagotuj wodę z solą. Wrzuć makaron i gotuj al dente wg instrukcji na opakowaniu.",
+      "Na patelni rozgrzej oliwę, zeszklij drobno posiekany czosnek (ok. 1 min, nie przypal!).",
+      "Wlej passatę, dopraw solą i pieprzem. Gotuj na małym ogniu 8-10 minut.",
+      "Odcedź makaron, zostaw kubek wody po makaronie. Wymieszaj z sosem, dodając łyżkę wody jeśli za gęsty.",
+      "Podawaj z listkami bazylii i startym parmezanem. Smacznego! 🌿"
+    ]
+  },
+  {
+    id: 2,
+    name: "Kiełbaski z grilla z sałatką coleslaw",
+    time: "25 min",
+    emoji: "🌭",
+    tags: ["bezglutenowe","z laktozą-opcja"],
+    source: "https://www.anniagotuje.pl/grill",
+    desc: "Lato, działka, grill. Soczyste kiełbaski i orzeźwiający coleslaw – idealny duet.",
+    ingredients: [
+      { name: "Kiełbaski grillowe", amount: 2, unit: "szt", key: "kielbaski" },
+      { name: "Kapusta biała", amount: 150, unit: "g", key: "kapusta" },
+      { name: "Marchewka", amount: 1, unit: "szt", key: "marchewka" },
+      { name: "Majonez", amount: 2, unit: "łyżki", key: "majonez" },
+      { name: "Ocet jabłkowy", amount: 1, unit: "łyżka", key: "ocet" },
+      { name: "Cukier", amount: 0.5, unit: "łyżeczki", key: "cukier" },
+      { name: "Sól, pieprz", amount: 1, unit: "szczypta", key: "sol" }
+    ],
+    steps: [
+      "Rozgrzej grill lub patelnię grillową. Kiełbaski natnij nożem co 2 cm.",
+      "Grilluj kiełbaski 10-12 minut, obracając, aż będą złocisto-brązowe.",
+      "Kapustę poszatkuj cienko, marchewkę zetrzyj na tarce.",
+      "Wymieszaj majonez z octem, cukrem, solą i pieprzem. Połącz z warzywami.",
+      "Odstaw coleslaw na 10 minut, żeby smaki się przegryzły. Podawaj z kiełbaskami."
+    ]
+  },
+  {
+    id: 3,
+    name: "Jajecznica z warzywami i szczypiorkiem",
+    time: "10 min",
+    emoji: "🍳",
+    tags: ["bezglutenowe","wegetariańskie","z laktozą"],
+    source: "https://www.anniagotuje.pl/jajecznica",
+    desc: "Śniadanie mistrzów działkowiczów. Gotowe w 10 minut, sycące przez cały dzień.",
+    ingredients: [
+      { name: "Jajka", amount: 3, unit: "szt", key: "jajka" },
+      { name: "Masło", amount: 1, unit: "łyżka", key: "maslo" },
+      { name: "Pomidor", amount: 1, unit: "szt", key: "pomidor" },
+      { name: "Szczypiorek", amount: 3, unit: "łodyżki", key: "szczypiorek" },
+      { name: "Sól, pieprz", amount: 1, unit: "szczypta", key: "sol" },
+      { name: "Papryka (opcja)", amount: 0.5, unit: "szt", key: "papryka" }
+    ],
+    steps: [
+      "Rozbij jajka do miski, dopraw solą i pieprzem, roztrzep widelcem.",
+      "Na patelni rozgrzej masło na średnim ogniu.",
+      "Wlej jajka. Mieszaj delikatnie drewnianą łyżką, tworząc kremowe skrzepy.",
+      "Zdejmij z ognia gdy jeszcze lekko wilgotna – dogotuje się z ciepłem patelni.",
+      "Podawaj z pokrojonym pomidorem, plasterkami papryki i posiekanym szczypiorkiem."
+    ]
+  },
+  {
+    id: 4,
+    name: "Zupa pomidorowa z ryżem",
+    time: "30 min",
+    emoji: "🍅",
+    tags: ["bezglutenowe","wegetariańskie","bezlaktozowe"],
+    source: "https://www.anniagotuje.pl/zupa-pomidorowa",
+    desc: "Babcina zupa pomidorowa w wersji działkowej – szybka, pyszna i sycąca.",
+    ingredients: [
+      { name: "Passata pomidorowa", amount: 400, unit: "ml", key: "passata" },
+      { name: "Bulion warzywny", amount: 600, unit: "ml", key: "bulion" },
+      { name: "Ryż", amount: 60, unit: "g", key: "ryz" },
+      { name: "Czosnek", amount: 2, unit: "ząbki", key: "czosnek" },
+      { name: "Cebula", amount: 1, unit: "szt", key: "cebula" },
+      { name: "Oliwa", amount: 1, unit: "łyżka", key: "oliwa" },
+      { name: "Cukier", amount: 1, unit: "łyżeczka", key: "cukier" },
+      { name: "Śmietana (opcja)", amount: 2, unit: "łyżki", key: "smietana" }
+    ],
+    steps: [
+      "Cebulę pokrój drobno, zeszklij na oliwie razem z czosnkiem.",
+      "Wlej passatę i bulion, dodaj szczyptę cukru (redukuje kwasowość).",
+      "Zagotuj, dodaj ryż i gotuj 15-18 minut na małym ogniu.",
+      "Dopraw solą i pieprzem. Podawaj ze śmietaną lub bez dla wersji bezlaktozowej."
+    ]
+  },
+  {
+    id: 5,
+    name: "Potrawka z kurczaka i ziemniaków",
+    time: "45 min",
+    emoji: "🍲",
+    tags: ["bezglutenowe","z laktozą-opcja"],
+    source: "https://www.anniagotuje.pl/potrawka-kurczak",
+    desc: "Jednogarnkowe danie, które samo się gotuje. Idealne gdy nie chce się zmywać!",
+    ingredients: [
+      { name: "Pierś z kurczaka", amount: 200, unit: "g", key: "kurczak" },
+      { name: "Ziemniaki", amount: 300, unit: "g", key: "ziemniaki" },
+      { name: "Marchewka", amount: 2, unit: "szt", key: "marchewka" },
+      { name: "Cebula", amount: 1, unit: "szt", key: "cebula" },
+      { name: "Bulion drobiowy", amount: 400, unit: "ml", key: "bulion" },
+      { name: "Śmietana 18%", amount: 3, unit: "łyżki", key: "smietana" },
+      { name: "Natka pietruszki", amount: 2, unit: "łyżki", key: "natka" },
+      { name: "Sól, pieprz, majeranek", amount: 1, unit: "szczypta", key: "sol" }
+    ],
+    steps: [
+      "Kurczaka pokrój w kostkę, obsmaż na oleju ze wszystkich stron na złoto.",
+      "Dodaj posiekaną cebulę i marchewkę, smaż 3 minuty.",
+      "Dorzuć obrane i pokrojone w kostkę ziemniaki, zalej bulionem.",
+      "Gotuj pod przykryciem 25-30 minut, aż ziemniaki zmiękną.",
+      "Na koniec wmieszaj śmietanę, dopraw i posyp świeżą natką."
+    ]
+  },
+  {
+    id: 6,
+    name: "Tosty z serem i warzywami",
+    time: "10 min",
+    emoji: "🥪",
+    tags: ["wegetariańskie","z laktozą"],
+    source: "https://www.anniagotuje.pl/tosty",
+    desc: "Szybka przekąska lub lekka kolacja. Chrupiące, ciągnące się ze sera – bajka.",
+    ingredients: [
+      { name: "Chleb tostowy", amount: 2, unit: "kromki", key: "chleb" },
+      { name: "Ser żółty", amount: 40, unit: "g", key: "ser" },
+      { name: "Pomidor", amount: 1, unit: "szt", key: "pomidor" },
+      { name: "Szynka (opcja)", amount: 2, unit: "plastry", key: "szynka" },
+      { name: "Masło", amount: 0.5, unit: "łyżki", key: "maslo" },
+      { name: "Zioła prowansalskie", amount: 1, unit: "szczypta", key: "ziolka" }
+    ],
+    steps: [
+      "Chleb posmaruj cienko masłem z obu stron.",
+      "Ułóż plastry sera, pomidora i opcjonalnie szynki.",
+      "Posyp ziołami prowansalskimi.",
+      "Podpiecz na patelni grillowej lub tosterze 3-4 minuty z każdej strony.",
+      "Podawaj od razu, póki ser się ciągnie!"
+    ]
+  },
+  {
+    id: 7,
+    name: "Sałatka grecka",
+    time: "10 min",
+    emoji: "🥗",
+    tags: ["bezglutenowe","wegetariańskie","bezlaktozowe-opcja"],
+    source: "https://www.anniagotuje.pl/salatka-grecka",
+    desc: "Orzeźwiająca, kolorowa i zero gotowania. Idealna w upał na działce.",
+    ingredients: [
+      { name: "Ogórek", amount: 1, unit: "szt", key: "ogorek" },
+      { name: "Pomidor", amount: 2, unit: "szt", key: "pomidor" },
+      { name: "Ser feta", amount: 80, unit: "g", key: "feta" },
+      { name: "Oliwki czarne", amount: 30, unit: "g", key: "oliwki" },
+      { name: "Cebula czerwona", amount: 0.5, unit: "szt", key: "cebula" },
+      { name: "Oliwa z oliwek", amount: 2, unit: "łyżki", key: "oliwa" },
+      { name: "Oregano", amount: 1, unit: "szczypta", key: "oregano" }
+    ],
+    steps: [
+      "Ogórka i pomidory pokrój w grubą kostkę. Cebulę w cienkie piórka.",
+      "Ułóż warzywa w misce, na wierzchu połóż oliwki.",
+      "Fetę pokrusz lub pokrój w kostkę, ułóż na sałatce.",
+      "Skrop oliwą, posyp oregano, solą i pieprzem.",
+      "Nie mieszaj! Każdy nakłada sobie sam, żeby feta nie rozpadła się wcześniej."
+    ]
+  },
+  {
+    id: 8,
+    name: "Pancakes na śniadanie",
+    time: "20 min",
+    emoji: "🥞",
+    tags: ["wegetariańskie","z laktozą"],
+    source: "https://www.anniagotuje.pl/pancakes",
+    desc: "Puchate, grube, amerykańskie pancakes – weekendowy rytuał na działce.",
+    ingredients: [
+      { name: "Mąka pszenna", amount: 100, unit: "g", key: "maka" },
+      { name: "Mleko", amount: 150, unit: "ml", key: "mleko" },
+      { name: "Jajko", amount: 1, unit: "szt", key: "jajka" },
+      { name: "Cukier", amount: 1, unit: "łyżka", key: "cukier" },
+      { name: "Proszek do pieczenia", amount: 1, unit: "łyżeczka", key: "proszek" },
+      { name: "Masło", amount: 1, unit: "łyżka", key: "maslo" },
+      { name: "Syrop klonowy / dżem", amount: 2, unit: "łyżki", key: "syrop" }
+    ],
+    steps: [
+      "Wymieszaj suche składniki: mąkę, cukier, proszek do pieczenia i szczyptę soli.",
+      "Osobno połącz mleko, jajko i roztopione masło.",
+      "Połącz mokre składniki z suchymi. Mieszaj tylko do połączenia – grudki są OK!",
+      "Na rozgrzaną patelnię wlej łyżkę ciasta. Smaż 2 minuty aż pojawią się bąbelki.",
+      "Przewróć, smaż jeszcze minutę. Podawaj z syropem lub dżemem."
+    ]
+  },
+  {
+    id: 9,
+    name: "Zupa cebulowa po polsku",
+    time: "35 min",
+    emoji: "🧅",
+    tags: ["bezglutenowe","wegetariańskie","z laktozą"],
+    source: "https://www.anniagotuje.pl/zupa-cebulowa",
+    desc: "Rozgrzewająca, aksamitna i zaskakująco prosta. Dobra na chłodniejszy wieczór.",
+    ingredients: [
+      { name: "Cebula", amount: 3, unit: "szt", key: "cebula" },
+      { name: "Masło", amount: 2, unit: "łyżki", key: "maslo" },
+      { name: "Bulion warzywny", amount: 800, unit: "ml", key: "bulion" },
+      { name: "Śmietana", amount: 3, unit: "łyżki", key: "smietana" },
+      { name: "Ser żółty starty", amount: 40, unit: "g", key: "ser" },
+      { name: "Tymianek", amount: 1, unit: "szczypta", key: "tymianek" }
+    ],
+    steps: [
+      "Cebule pokrój w pióra. Smaż na maśle na małym ogniu 20-25 minut aż będą złociste i słodkie.",
+      "Zalej bulionem, dodaj tymianek. Gotuj 10 minut.",
+      "Zblenduj zupę lub zostaw z kawałkami cebuli – jak wolisz.",
+      "Podaj ze śmietaną i startym serem na wierzchu."
+    ]
+  },
+  {
+    id: 10,
+    name: "Ryż smażony z warzywami",
+    time: "20 min",
+    emoji: "🍚",
+    tags: ["bezglutenowe","wegetariańskie","bezlaktozowe"],
+    source: "https://www.anniagotuje.pl/ryz-smazony",
+    desc: "Azjatycki klasyk dostosowany do działkowych warunków. Najlepszy z wczorajszego ryżu!",
+    ingredients: [
+      { name: "Ryż gotowany", amount: 200, unit: "g", key: "ryz" },
+      { name: "Jajka", amount: 2, unit: "szt", key: "jajka" },
+      { name: "Marchewka", amount: 1, unit: "szt", key: "marchewka" },
+      { name: "Cebula dymka", amount: 2, unit: "szt", key: "cebula" },
+      { name: "Sos sojowy", amount: 2, unit: "łyżki", key: "sos-sojowy" },
+      { name: "Olej", amount: 2, unit: "łyżki", key: "olej" },
+      { name: "Czosnek", amount: 1, unit: "ząbek", key: "czosnek" }
+    ],
+    steps: [
+      "Rozgrzej mocno olej na patelni lub woku.",
+      "Wrzuć posiekaną marchewkę i cebulkę, smaż 3 minuty.",
+      "Dodaj czosnek, smaż 30 sekund.",
+      "Wrzuć zimny ryż i rozbij grudki. Smaż 3-4 minuty mieszając.",
+      "Zrób miejsca na jajka, wbij i mieszaj aż się zetną.",
+      "Polej sosem sojowym, wymieszaj i podawaj natychmiast."
+    ]
+  },
+  {
+    id: 11,
+    name: "Bruschetta z pomidorami i czosnkiem",
+    time: "15 min",
+    emoji: "🍞",
+    tags: ["wegetariańskie","bezlaktozowe","z laktozą-opcja"],
+    source: "https://www.anniagotuje.pl/bruschetta",
+    desc: "Włoska przekąska, która smakuje jak słońce. Świetna jako przystawka przed grillowaniem.",
+    ingredients: [
+      { name: "Bagietka lub chleb wiejski", amount: 4, unit: "kromki", key: "chleb" },
+      { name: "Pomidory", amount: 3, unit: "szt", key: "pomidor" },
+      { name: "Czosnek", amount: 2, unit: "ząbki", key: "czosnek" },
+      { name: "Oliwa z oliwek", amount: 3, unit: "łyżki", key: "oliwa" },
+      { name: "Świeża bazylia", amount: 6, unit: "listków", key: "bazylia" },
+      { name: "Sól morska", amount: 1, unit: "szczypta", key: "sol" }
+    ],
+    steps: [
+      "Chleb opiecz na grillu lub patelni z obu stron na złoto.",
+      "Pomidory pokrój w drobną kostkę, odcedź z soku. Dodaj posiekaną bazylię, oliwę i sól.",
+      "Gorące grzanki natrzyj przekrojonym czosnkiem – to sekret bruschetti!",
+      "Nałóż pomidory na chleb tuż przed podaniem, żeby chleb nie rozmiókł.",
+      "Skrop jeszcze odrobiną oliwy i od razu podawaj."
+    ]
+  },
+  {
+    id: 12,
+    name: "Zupa gulaszowa z papryką",
+    time: "50 min",
+    emoji: "🫕",
+    tags: ["bezglutenowe","bezlaktozowe"],
+    source: "https://www.anniagotuje.pl/gulasz",
+    desc: "Sycący, aromatyczny gulasz idealny na wieczorny posiłek przy ognisku.",
+    ingredients: [
+      { name: "Wołowina/wieprzowina", amount: 300, unit: "g", key: "mieso" },
+      { name: "Papryka czerwona", amount: 2, unit: "szt", key: "papryka" },
+      { name: "Cebula", amount: 2, unit: "szt", key: "cebula" },
+      { name: "Koncentrat pomidorowy", amount: 2, unit: "łyżki", key: "koncentrat" },
+      { name: "Papryka wędzona w proszku", amount: 2, unit: "łyżeczki", key: "papryka-proszkowa" },
+      { name: "Bulion", amount: 400, unit: "ml", key: "bulion" },
+      { name: "Czosnek", amount: 3, unit: "ząbki", key: "czosnek" },
+      { name: "Olej", amount: 2, unit: "łyżki", key: "olej" }
+    ],
+    steps: [
+      "Mięso pokrój w kostkę 3cm. Obsmaż partiami na rozgrzanym oleju na rumiano.",
+      "Cebulę i czosnek zeszklij, dodaj paprykę w kawałkach.",
+      "Dorzuć mięso, koncentrat i paprykę w proszku. Wymieszaj.",
+      "Zalej bulionem, duś pod przykryciem 35-40 minut na małym ogniu.",
+      "Podawaj z pieczywem lub kasza – sam w sobie jest kompletnym daniem."
+    ]
+  }
+];
+
+// ============================================================
+//  APLIKACJA
+// ============================================================
+
+const USERS = ['Kalina','Zosia','Kuba','Grześ'];
+const USER_AVATARS = { 'Kalina':'🌸','Zosia':'🌻','Kuba':'🌿','Grześ':'🍀' };
+const USER_COLORS = { 'Kalina':'bg-pink-100 text-pink-700','Zosia':'bg-yellow-100 text-yellow-700','Kuba':'bg-green-100 text-green-700','Grześ':'bg-teal-100 text-teal-700' };
+const DIET_TAGS = ['Bezglutenowe','Glutenowe','Bezlaktozowe','Z laktozą'];
+
+let supabase = null;
+let useSupabase = false;
+let currentUser = null;
+let currentTab = 'shopping';
+let shoppingItems = [];
+let expenses = [];
+let shoppingFilter = 'all';
+let dietFilter = 'all';
+let selectedRecipe = null;
+let recipePortions = 4;
+
+// Init Supabase
+function initSupabase() {
+  if (SUPABASE_URL !== 'TUTAJ_WKLEJ_URL' && SUPABASE_ANON_KEY !== 'TUTAJ_WKLEJ_KLUCZ') {
+    try {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      useSupabase = true;
+      console.log('✅ Supabase połączone!');
+    } catch(e) { console.warn('Supabase init failed, używam LocalStorage', e); }
+  } else {
+    console.log('ℹ️ Tryb LocalStorage (brak kluczy Supabase)');
+  }
+}
+
+// LocalStorage helpers
+function lsGet(key, def=[]) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
+function lsSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// Toast
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ============================================================
+//  DATA LAYER
+// ============================================================
+
+async function loadShopping() {
+  if (useSupabase) {
+    const { data, error } = await supabase.from('shopping_list').select('*').order('created_at');
+    if (!error && data) { shoppingItems = data; return; }
+  }
+  shoppingItems = lsGet('shopping_list', []);
+}
+
+async function addShoppingItem(name, tags) {
+  const item = { id: crypto.randomUUID(), name, added_by: currentUser, status: 'want', tags, created_at: new Date().toISOString() };
+  if (useSupabase) {
+    const { data, error } = await supabase.from('shopping_list').insert(item).select().single();
+    if (!error && data) { shoppingItems.push(data); return; }
+  }
+  shoppingItems.push(item);
+  lsSet('shopping_list', shoppingItems);
+}
+
+async function updateShoppingStatus(id, status) {
+  if (useSupabase) {
+    await supabase.from('shopping_list').update({ status }).eq('id', id);
+  }
+  const i = shoppingItems.findIndex(x => x.id === id);
+  if (i !== -1) { shoppingItems[i].status = status; lsSet('shopping_list', shoppingItems); }
+}
+
+async function deleteShoppingItem(id) {
+  if (useSupabase) {
+    await supabase.from('shopping_list').delete().eq('id', id);
+  }
+  shoppingItems = shoppingItems.filter(x => x.id !== id);
+  lsSet('shopping_list', shoppingItems);
+}
+
+async function loadExpenses() {
+  if (useSupabase) {
+    const { data, error } = await supabase.from('expenses').select('*').order('created_at');
+    if (!error && data) { expenses = data; return; }
+  }
+  expenses = lsGet('expenses', []);
+}
+
+async function addExpense(title, amount, paid_by) {
+  const item = { id: crypto.randomUUID(), title, amount: parseFloat(amount), paid_by, created_at: new Date().toISOString() };
+  if (useSupabase) {
+    const { data, error } = await supabase.from('expenses').insert(item).select().single();
+    if (!error && data) { expenses.push(data); return; }
+  }
+  expenses.push(item);
+  lsSet('expenses', expenses);
+}
+
+async function deleteExpense(id) {
+  if (useSupabase) {
+    await supabase.from('expenses').delete().eq('id', id);
+  }
+  expenses = expenses.filter(x => x.id !== id);
+  lsSet('expenses', expenses);
+}
+
+// Supabase realtime
+function setupRealtime() {
+  if (!useSupabase) return;
+  supabase.channel('changes').on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_list' }, async () => {
+    await loadShopping(); renderShopping();
+  }).on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
+    await loadExpenses(); renderExpenses();
+  }).subscribe();
+}
+
+// ============================================================
+//  RENDER HELPERS
+// ============================================================
+
+function statusLabel(s) {
+  if (s==='want') return '<span class="badge-want text-xs px-2 py-0.5 rounded-full font-bold">🛒 Do kupienia</span>';
+  if (s==='cart') return '<span class="badge-cart text-xs px-2 py-0.5 rounded-full font-bold">🧺 W koszyku</span>';
+  return '<span class="badge-have text-xs px-2 py-0.5 rounded-full font-bold">✅ Mamy to</span>';
+}
+function nextStatus(s) { return s==='want'?'cart':s==='cart'?'have':'want'; }
+function statusClass(s) { return s==='want'?'status-want':s==='cart'?'status-cart':'status-have'; }
+function tagBadge(t) {
+  const colors = { 'Bezglutenowe':'bg-green-100 text-green-700','Glutenowe':'bg-amber-100 text-amber-700','Bezlaktozowe':'bg-sky-100 text-sky-700','Z laktozą':'bg-purple-100 text-purple-700' };
+  return `<span class="text-xs px-2 py-0.5 rounded-full font-semibold ${colors[t]||'bg-gray-100'}">${t}</span>`;
+}
+
+// ============================================================
+//  RENDER SHOPPING
+// ============================================================
+
+function renderShopping() {
+  let items = [...shoppingItems];
+  if (shoppingFilter !== 'all') items = items.filter(i => i.status === shoppingFilter);
+  if (dietFilter !== 'all') items = items.filter(i => i.tags && i.tags.includes(dietFilter));
+
+  const container = document.getElementById('shopping-list');
+  if (!container) return;
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="text-center py-12 text-gray-400"><i class="fas fa-shopping-basket text-4xl mb-3 block opacity-40"></i><p class="font-semibold">Brak produktów${shoppingFilter!=='all'||dietFilter!=='all'?' spełniających filtry':''}</p></div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="slide-in ${statusClass(item.status)} rounded-xl p-3 mb-2 shadow-sm">
+      <div class="flex items-start gap-3">
+        <button onclick="cycleStatus('${item.id}')" class="mt-0.5 shrink-0" title="Zmień status">
+          ${statusLabel(item.status)}
+        </button>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-gray-800 text-sm leading-tight">${escHtml(item.name)}</p>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${(item.tags||[]).map(tagBadge).join('')}
+          </div>
+          <p class="text-xs text-gray-400 mt-1">dodał/a: <span class="font-semibold">${escHtml(item.added_by||'?')}</span></p>
+        </div>
+        <button onclick="removeItem('${item.id}')" class="text-gray-300 hover:text-red-400 transition-colors shrink-0 p-1"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function cycleStatus(id) {
+  const item = shoppingItems.find(x => x.id === id);
+  if (!item) return;
+  const next = nextStatus(item.status);
+  await updateShoppingStatus(id, next);
+  renderShopping(); renderRecipes();
+  showToast(`Status zmieniony na: ${next==='want'?'Do kupienia':next==='cart'?'W koszyku':'Mamy to'}`);
+}
+
+async function removeItem(id) {
+  await deleteShoppingItem(id);
+  renderShopping(); renderRecipes();
+  showToast('Usunięto produkt');
+}
+
+async function handleAddItem(e) {
+  e.preventDefault();
+  const name = document.getElementById('item-name').value.trim();
+  if (!name) return;
+  const tags = DIET_TAGS.filter(t => document.getElementById('tag-'+t.replace(/\s/g,''))?.checked);
+  await addShoppingItem(name, tags);
+  document.getElementById('add-item-form').reset();
+  renderShopping(); renderRecipes();
+  showToast(`"${name}" dodano do listy!`);
+}
+
+// ============================================================
+//  RENDER EXPENSES
+// ============================================================
+
+function calcBalances() {
+  const paid = {}; USERS.forEach(u => paid[u] = 0);
+  expenses.forEach(e => { paid[e.paid_by] = (paid[e.paid_by]||0) + parseFloat(e.amount); });
+  const total = Object.values(paid).reduce((a,b)=>a+b,0);
+  const perPerson = total / USERS.length;
+  const balance = {};
+  USERS.forEach(u => balance[u] = +(paid[u] - perPerson).toFixed(2));
+  return { paid, total, perPerson, balance };
+}
+
+function calcSettlement(balance) {
+  const debtors = USERS.filter(u=>balance[u]<0).map(u=>({name:u,amount:-balance[u]}));
+  const creditors = USERS.filter(u=>balance[u]>0).map(u=>({name:u,amount:balance[u]}));
+  const transactions = [];
+  let i=0,j=0;
+  while(i<debtors.length && j<creditors.length) {
+    const pay = Math.min(debtors[i].amount, creditors[j].amount);
+    if (pay > 0.01) transactions.push({ from:debtors[i].name, to:creditors[j].name, amount:+pay.toFixed(2) });
+    debtors[i].amount -= pay; creditors[j].amount -= pay;
+    if (debtors[i].amount < 0.01) i++;
+    if (creditors[j].amount < 0.01) j++;
+  }
+  return transactions;
+}
+
+function renderExpenses() {
+  const container = document.getElementById('expenses-list');
+  const summary = document.getElementById('expenses-summary');
+  if (!container) return;
+
+  const { paid, total, perPerson, balance } = calcBalances();
+  const settlements = calcSettlement(balance);
+
+  // Summary
+  summary.innerHTML = `
+    <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-green-50">
+      <h3 class="font-display text-base font-bold text-gray-700 mb-3">📊 Podsumowanie</h3>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        ${USERS.map(u=>`
+          <div class="flex items-center gap-2 p-2 rounded-xl ${balance[u]>=0?'bg-green-50':'bg-red-50'}">
+            <span class="text-lg">${USER_AVATARS[u]}</span>
+            <div>
+              <p class="text-xs font-bold text-gray-700">${u}</p>
+              <p class="text-xs ${balance[u]>=0?'text-green-600':'text-red-500'} font-bold">${balance[u]>=0?'+':''}${balance[u].toFixed(2)} zł</p>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <p class="text-xs text-gray-400 text-center">Łącznie: <span class="font-bold text-gray-600">${total.toFixed(2)} zł</span> | Per person: <span class="font-bold text-gray-600">${perPerson.toFixed(2)} zł</span></p>
+      ${settlements.length>0?`
+        <div class="mt-3 pt-3 border-t border-gray-100">
+          <p class="text-xs font-bold text-gray-500 mb-2">💸 Do rozliczenia:</p>
+          ${settlements.map(s=>`<p class="text-xs bg-amber-50 rounded-lg p-2 mb-1 text-amber-800 font-semibold"><span class="font-bold">${s.from}</span> → <span class="font-bold">${s.to}</span>: ${s.amount.toFixed(2)} zł</p>`).join('')}
+        </div>
+      `:'<p class="text-xs text-center text-green-600 font-bold mt-2">✅ Wszyscy rozliczeni!</p>'}
+    </div>
+  `;
+
+  // List
+  if (expenses.length === 0) {
+    container.innerHTML = `<div class="text-center py-8 text-gray-400"><i class="fas fa-receipt text-3xl mb-2 block opacity-40"></i><p class="text-sm">Brak wydatków</p></div>`;
+    return;
+  }
+  container.innerHTML = expenses.slice().reverse().map(e=>`
+    <div class="slide-in bg-white rounded-xl p-3 mb-2 shadow-sm border border-gray-50 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 text-lg">💰</div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-gray-800 text-sm">${escHtml(e.title)}</p>
+        <p class="text-xs text-gray-400">Zapłacił/a: <span class="font-semibold">${escHtml(e.paid_by)}</span> · ${new Date(e.created_at).toLocaleDateString('pl-PL')}</p>
+      </div>
+      <div class="text-right shrink-0">
+        <p class="font-black text-green-700 text-base">${parseFloat(e.amount).toFixed(2)} zł</p>
+        <p class="text-xs text-gray-300">${(parseFloat(e.amount)/4).toFixed(2)} zł/os</p>
+      </div>
+      <button onclick="removeExpense('${e.id}')" class="text-gray-200 hover:text-red-400 transition-colors p-1 ml-1"><i class="fas fa-times"></i></button>
+    </div>
+  `).join('');
+}
+
+async function removeExpense(id) {
+  await deleteExpense(id);
+  renderExpenses();
+  showToast('Usunięto wydatek');
+}
+
+async function handleAddExpense(e) {
+  e.preventDefault();
+  const title = document.getElementById('exp-title').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const paid_by = document.getElementById('exp-payer').value;
+  if (!title || !amount || amount<=0) return;
+  await addExpense(title, amount, paid_by);
+  document.getElementById('add-expense-form').reset();
+  document.getElementById('exp-payer').value = currentUser;
+  renderExpenses();
+  showToast(`Wydatek "${title}" dodany!`);
+}
+
+// ============================================================
+//  RENDER RECIPES
+// ============================================================
+
+function getHaveItems() {
+  return shoppingItems.filter(i=>i.status==='have').map(i=>i.name.toLowerCase());
+}
+
+function renderRecipes(filterOwned=false) {
+  const container = document.getElementById('recipes-grid');
+  if (!container) return;
+  const haveItems = getHaveItems();
+  let recipes = RECIPES;
+  if (filterOwned) {
+    recipes = recipes.filter(r => r.ingredients.some(ing => haveItems.some(h=>h.includes(ing.key)||h.includes(ing.name.toLowerCase()))));
+  }
+  if (recipes.length===0) {
+    container.innerHTML=`<div class="col-span-2 text-center py-10 text-gray-400"><i class="fas fa-utensils text-3xl mb-2 block opacity-40"></i><p class="text-sm">Brak przepisów z dostępnych składników</p></div>`;
+    return;
+  }
+  container.innerHTML = recipes.map(r=>`
+    <div onclick="openRecipe(${r.id})" class="bg-white rounded-2xl p-4 shadow-sm border border-green-50 cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5">
+      <div class="text-3xl mb-2">${r.emoji}</div>
+      <h4 class="font-bold text-gray-800 text-sm leading-tight mb-1">${r.name}</h4>
+      <p class="text-xs text-gray-400 mb-2"><i class="fas fa-clock mr-1"></i>${r.time}</p>
+      <p class="text-xs text-gray-500 line-clamp-2">${r.desc}</p>
+    </div>
+  `).join('');
+}
+
+function openRecipe(id) {
+  selectedRecipe = RECIPES.find(r=>r.id===id);
+  recipePortions = 4;
+  renderRecipeModal();
+  document.getElementById('recipe-modal').classList.remove('hidden');
+  document.getElementById('recipe-modal').classList.add('flex');
+}
+
+function closeRecipeModal() {
+  document.getElementById('recipe-modal').classList.add('hidden');
+  document.getElementById('recipe-modal').classList.remove('flex');
+}
+
+function renderRecipeModal() {
+  if (!selectedRecipe) return;
+  const r = selectedRecipe;
+  const haveItems = getHaveItems();
+  const ratio = recipePortions / 4;
+  const modal = document.getElementById('recipe-modal-content');
+  modal.innerHTML = `
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <span class="text-4xl">${r.emoji}</span>
+        <h2 class="font-display text-xl font-bold text-gray-800 mt-1">${r.name}</h2>
+        <p class="text-sm text-gray-500 mt-1"><i class="fas fa-clock mr-1 text-amber-500"></i>${r.time}</p>
+      </div>
+      <button onclick="closeRecipeModal()" class="text-gray-300 hover:text-gray-600 text-2xl p-1"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-sm text-gray-600 italic mb-4">${r.desc}</p>
+    
+    <div class="flex gap-2 mb-4">
+      <button onclick="setPortions(4)" class="flex-1 py-2 rounded-xl text-sm font-bold transition-all ${recipePortions===4?'bg-green-500 text-white shadow':'bg-gray-100 text-gray-600'}">
+        <i class="fas fa-users mr-1"></i>Dla 4 osób
+      </button>
+      <button onclick="setPortions(2)" class="flex-1 py-2 rounded-xl text-sm font-bold transition-all ${recipePortions===2?'bg-green-500 text-white shadow':'bg-gray-100 text-gray-600'}">
+        <i class="fas fa-user-friends mr-1"></i>Oryginał (2)
+      </button>
+    </div>
+
+    <div class="bg-green-50 rounded-xl p-3 mb-4">
+      <h3 class="font-bold text-gray-700 text-sm mb-2">🛒 Składniki (${recipePortions} osób):</h3>
+      <ul class="space-y-1">
+        ${r.ingredients.map(ing=>{
+          const have = haveItems.some(h=>h.includes(ing.key)||h.includes(ing.name.toLowerCase()));
+          const amt = ing.amount * ratio;
+          const amtStr = Number.isInteger(amt) ? amt : amt.toFixed(1);
+          return `<li class="flex items-center gap-2 text-sm ${have?'text-green-700':'text-red-500'}">
+            <i class="fas ${have?'fa-check-circle text-green-500':'fa-times-circle text-red-400'} text-xs shrink-0"></i>
+            <span>${ing.unit?`${amtStr} ${ing.unit}`:`${amtStr}×`} ${ing.name}</span>
+            ${have?'<span class="text-xs text-green-400 ml-auto">✓ mamy</span>':'<span class="text-xs text-red-300 ml-auto">brak</span>'}
+          </li>`;
+        }).join('')}
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-bold text-gray-700 text-sm mb-2">👩‍🍳 Kroki:</h3>
+      <ol class="space-y-2">
+        ${r.steps.map((step,i)=>`
+          <li class="flex gap-3 text-sm text-gray-700">
+            <span class="w-6 h-6 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-xs shrink-0">${i+1}</span>
+            <span>${step}</span>
+          </li>
+        `).join('')}
+      </ol>
+    </div>
+
+    <a href="${r.source}" target="_blank" class="flex items-center gap-2 text-xs text-green-600 hover:text-green-800 transition-colors">
+      <i class="fas fa-external-link-alt"></i> Pełny przepis na AniaGotuje.pl
+    </a>
+  `;
+}
+
+function setPortions(n) { recipePortions = n; renderRecipeModal(); }
+
+function randomRecipe() {
+  const r = RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  openRecipe(r.id);
+}
+
+// ============================================================
+//  TABS
+// ============================================================
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['shopping','expenses','recipes'].forEach(t => {
+    const btn = document.getElementById('tab-'+t);
+    const panel = document.getElementById('panel-'+t);
+    if (t===tab) { btn.classList.add('tab-active'); panel.classList.remove('hidden'); }
+    else { btn.classList.remove('tab-active'); panel.classList.add('hidden'); }
+  });
+  if (tab==='expenses') renderExpenses();
+  if (tab==='recipes') renderRecipes(document.getElementById('filter-owned')?.checked);
+  if (tab==='shopping') renderShopping();
+}
+
+function setShoppingFilter(f) {
+  shoppingFilter = f;
+  ['all','want','cart','have'].forEach(x => {
+    document.getElementById('sf-'+x)?.classList[x===f?'add':'remove']('filter-active');
+    document.getElementById('sf-'+x)?.classList[x!==f?'add':'remove']('bg-white','text-gray-600');
+  });
+  renderShopping();
+}
+
+function setDietFilter(f) {
+  dietFilter = f;
+  document.querySelectorAll('[data-diet]').forEach(el => {
+    const d = el.dataset.diet;
+    if (d===f) el.classList.add('filter-active','!bg-green-500','!text-white');
+    else el.classList.remove('filter-active','!bg-green-500','!text-white');
+  });
+  renderShopping();
+}
+
+// ============================================================
+//  HTML BUILDERS
+// ============================================================
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function buildLoginScreen() {
+  return `
+    <div id="login-screen" class="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#e8f5e9] to-[#f7f9f3]">
+      <div class="text-center mb-8">
+        <div class="text-5xl mb-3">🌿</div>
+        <h1 class="font-display text-3xl font-bold text-green-800">Działka 2025</h1>
+        <p class="text-gray-500 text-sm mt-1">Organizator wyjazdu znajomych</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 shadow-lg w-full max-w-sm">
+        <p class="text-gray-700 font-bold text-center mb-5 text-lg">Kto jesteś? 👋</p>
+        <div class="grid grid-cols-2 gap-3">
+          ${USERS.map(u=>`
+            <button onclick="login('${u}')" class="profile-card flex flex-col items-center gap-2 p-5 rounded-2xl border-2 border-green-100 bg-green-50 hover:border-green-400 cursor-pointer">
+              <span class="text-4xl">${USER_AVATARS[u]}</span>
+              <span class="font-black text-green-800 text-lg">${u}</span>
+            </button>
+          `).join('')}
+        </div>
+        <p class="text-xs text-center text-gray-300 mt-4">Tryb: ${useSupabase?'☁️ Supabase (sync)':'💾 LocalStorage (lokalny)'}</p>
+      </div>
+    </div>
+  `;
+}
+
+function buildApp() {
+  return `
+    <!-- HEADER -->
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+      <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🌿</span>
+          <div>
+            <h1 class="font-display font-bold text-green-800 text-base leading-none">Działka 2025</h1>
+            <p class="text-xs text-gray-400">Cześć, <span class="font-bold text-green-600">${currentUser}</span> ${USER_AVATARS[currentUser]}</p>
+          </div>
+        </div>
+        <button onclick="logout()" class="text-xs text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-red-50">
+          <i class="fas fa-sign-out-alt"></i> Zmień
+        </button>
+      </div>
+    </header>
+
+    <!-- TABS -->
+    <nav class="bg-white border-b border-gray-100 sticky top-[61px] z-30">
+      <div class="max-w-lg mx-auto flex">
+        <button id="tab-shopping" onclick="switchTab('shopping')" class="flex-1 py-3 text-xs font-bold text-gray-500 transition-all flex flex-col items-center gap-0.5">
+          <i class="fas fa-shopping-basket text-base"></i>Zakupy
+        </button>
+        <button id="tab-expenses" onclick="switchTab('expenses')" class="flex-1 py-3 text-xs font-bold text-gray-500 transition-all flex flex-col items-center gap-0.5">
+          <i class="fas fa-wallet text-base"></i>Wydatki
+        </button>
+        <button id="tab-recipes" onclick="switchTab('recipes')" class="flex-1 py-3 text-xs font-bold text-gray-500 transition-all flex flex-col items-center gap-0.5">
+          <i class="fas fa-utensils text-base"></i>Przepisy
+        </button>
+      </div>
+    </nav>
+
+    <main class="max-w-lg mx-auto p-4 pb-24">
+
+      <!-- PANEL: SHOPPING -->
+      <div id="panel-shopping">
+        <!-- Add item form -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-green-50">
+          <h3 class="font-bold text-gray-700 text-sm mb-3"><i class="fas fa-plus-circle text-green-500 mr-1"></i>Dodaj produkt</h3>
+          <form id="add-item-form" onsubmit="handleAddItem(event)">
+            <input id="item-name" type="text" placeholder="Np. chleb, pomidory, piwo…" required
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100" />
+            <p class="text-xs font-bold text-gray-500 mb-2">Tagi dietetyczne:</p>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              ${DIET_TAGS.map(t=>`
+                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                  <input type="checkbox" id="tag-${t.replace(/\s/g,'')}" class="accent-green-500 w-4 h-4">
+                  ${tagBadge(t)}
+                </label>
+              `).join('')}
+            </div>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+              <i class="fas fa-plus mr-1"></i>Dodaj do listy
+            </button>
+          </form>
+        </div>
+
+        <!-- Filters: status -->
+        <div class="mb-3">
+          <p class="text-xs text-gray-400 font-bold mb-2">FILTRUJ STATUS:</p>
+          <div class="flex gap-2 flex-wrap">
+            <button id="sf-all" onclick="setShoppingFilter('all')" class="text-xs px-3 py-1.5 rounded-full font-bold bg-white text-gray-600 border border-gray-200 transition-all">Wszystkie</button>
+            <button id="sf-want" onclick="setShoppingFilter('want')" class="text-xs px-3 py-1.5 rounded-full font-bold bg-white text-gray-600 border border-gray-200 transition-all">🛒 Do kupienia</button>
+            <button id="sf-cart" onclick="setShoppingFilter('cart')" class="text-xs px-3 py-1.5 rounded-full font-bold bg-white text-gray-600 border border-gray-200 transition-all">🧺 W koszyku</button>
+            <button id="sf-have" onclick="setShoppingFilter('have')" class="text-xs px-3 py-1.5 rounded-full font-bold bg-white text-gray-600 border border-gray-200 transition-all">✅ Mamy to</button>
+          </div>
+        </div>
+
+        <!-- Filters: diet -->
+        <div class="mb-4">
+          <p class="text-xs text-gray-400 font-bold mb-2">FILTRUJ DIETĘ:</p>
+          <div class="flex gap-2 flex-wrap">
+            <button data-diet="all" onclick="setDietFilter('all')" class="text-xs px-3 py-1.5 rounded-full font-bold bg-green-500 text-white transition-all">Wszystkie</button>
+            ${DIET_TAGS.map(t=>`<button data-diet="${t}" onclick="setDietFilter('${t}')" class="text-xs px-3 py-1.5 rounded-full font-bold bg-white text-gray-600 border border-gray-200 transition-all">${t}</button>`).join('')}
+          </div>
+        </div>
+
+        <div id="shopping-list"></div>
+      </div>
+
+      <!-- PANEL: EXPENSES -->
+      <div id="panel-expenses" class="hidden">
+        <!-- Summary -->
+        <div id="expenses-summary"></div>
+
+        <!-- Add expense form -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-amber-50">
+          <h3 class="font-bold text-gray-700 text-sm mb-3"><i class="fas fa-plus-circle text-amber-500 mr-1"></i>Dodaj wydatek</h3>
+          <form id="add-expense-form" onsubmit="handleAddExpense(event)">
+            <input id="exp-title" type="text" placeholder="Np. Zakupy Biedronka, Paliwo…" required
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm mb-2 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            <div class="flex gap-2 mb-2">
+              <div class="flex-1 relative">
+                <input id="exp-amount" type="number" step="0.01" min="0.01" placeholder="Kwota" required
+                  class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+                <span class="absolute right-3 top-2.5 text-gray-400 text-sm font-bold">PLN</span>
+              </div>
+              <select id="exp-payer" class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-400 bg-white">
+                ${USERS.map(u=>`<option value="${u}" ${u===currentUser?'selected':''}>${USER_AVATARS[u]} ${u}</option>`).join('')}
+              </select>
+            </div>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+              <i class="fas fa-plus mr-1"></i>Dodaj wydatek
+            </button>
+          </form>
+        </div>
+
+        <h3 class="text-xs font-bold text-gray-400 mb-2">HISTORIA WYDATKÓW:</h3>
+        <div id="expenses-list"></div>
+      </div>
+
+      <!-- PANEL: RECIPES -->
+      <div id="panel-recipes" class="hidden">
+        <div class="flex gap-2 mb-4">
+          <button onclick="randomRecipe()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 rounded-2xl text-sm shadow-md hover:shadow-lg transition-all">
+            <i class="fas fa-dice mr-2"></i>Co dziś zjemy?
+          </button>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-600 mb-4 cursor-pointer bg-white rounded-xl p-3 shadow-sm border border-green-50">
+          <input type="checkbox" id="filter-owned" onchange="renderRecipes(this.checked)" class="accent-green-500 w-4 h-4">
+          <span class="font-semibold">Tylko z tego co mamy ✅</span>
+          <span class="text-xs text-gray-400 ml-auto">(filtruj po "Mamy to")</span>
+        </label>
+        <div id="recipes-grid" class="grid grid-cols-2 gap-3"></div>
+      </div>
+
+    </main>
+
+    <!-- RECIPE MODAL -->
+    <div id="recipe-modal" class="hidden fixed inset-0 z-50 items-end justify-center modal-bg" onclick="if(event.target===this)closeRecipeModal()">
+      <div class="bg-white rounded-t-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 shadow-2xl">
+        <div id="recipe-modal-content"></div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+//  AUTH
+// ============================================================
+
+function login(user) {
+  currentUser = user;
+  localStorage.setItem('dzialkUser', user);
+  renderApp();
+  showToast(`Cześć ${user}! 👋`);
+}
+
+function logout() {
+  localStorage.removeItem('dzialkUser');
+  currentUser = null;
+  document.getElementById('root').innerHTML = buildLoginScreen();
+}
+
+async function renderApp() {
+  document.getElementById('root').innerHTML = buildApp();
+  await Promise.all([loadShopping(), loadExpenses()]);
+  switchTab('shopping');
+  setShoppingFilter('all');
+  setupRealtime();
+}
+
+// ============================================================
+//  BOOT
+// ============================================================
+
+async function boot() {
+  initSupabase();
+  const saved = localStorage.getItem('dzialkUser');
+  if (saved && USERS.includes(saved)) {
+    currentUser = saved;
+    await renderApp();
+  } else {
+    document.getElementById('root').innerHTML = buildLoginScreen();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', boot);
+</script>
+
+<div id="root" class="min-h-screen"></div>
+
+</body>
+</html>
