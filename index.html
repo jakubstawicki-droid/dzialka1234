@@ -49,7 +49,7 @@ create table if not exists shopping_list (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   added_by text,
-  status text default 'want',  -- 'want' | 'cart' | 'have'
+  status text default 'want',
   tags text[] default '{}',
   created_at timestamptz default now()
 );
@@ -137,7 +137,7 @@ const RECIPES = [
       { name: "Masło", amount: 1, unit: "łyżka", key: "maslo" },
       { name: "Pomidor", amount: 1, unit: "szt", key: "pomidor" },
       { name: "Szczypiorek", amount: 3, unit: "łodyżki", key: "szczypiorek" },
-      { name: "Sól, pieprz", amount: 1, unit: "szczypta", key: "sol" },
+      { name: "Sół, pieprz", amount: 1, unit: "szczypta", key: "sol" },
       { name: "Papryka (opcja)", amount: 0.5, unit: "szt", key: "papryka" }
     ],
     steps: [
@@ -189,7 +189,7 @@ const RECIPES = [
       { name: "Bulion drobiowy", amount: 400, unit: "ml", key: "bulion" },
       { name: "Śmietana 18%", amount: 3, unit: "łyżki", key: "smietana" },
       { name: "Natka pietruszki", amount: 2, unit: "łyżki", key: "natka" },
-      { name: "Sól, pieprz, majeranek", amount: 1, unit: "szczypta", key: "sol" }
+      { name: "Sół, pieprz, majeranek", amount: 1, unit: "szczypta", key: "sol" }
     ],
     steps: [
       "Kurczaka pokrój w kostkę, obsmaż na oleju ze wszystkich stron na złoto.",
@@ -336,7 +336,7 @@ const RECIPES = [
       { name: "Czosnek", amount: 2, unit: "ząbki", key: "czosnek" },
       { name: "Oliwa z oliwek", amount: 3, unit: "łyżki", key: "oliwa" },
       { name: "Świeża bazylia", amount: 6, unit: "listków", key: "bazylia" },
-      { name: "Sól morska", amount: 1, unit: "szczypta", key: "sol" }
+      { name: "Sół morska", amount: 1, unit: "szczypta", key: "sol" }
     ],
     steps: [
       "Chleb opiecz na grillu lub patelni z obu stron na złoto.",
@@ -383,7 +383,10 @@ const USER_AVATARS = { 'Kalina':'🌸','Zosia':'🌻','Kuba':'🌿','Grześ':'�
 const USER_COLORS = { 'Kalina':'bg-pink-100 text-pink-700','Zosia':'bg-yellow-100 text-yellow-700','Kuba':'bg-green-100 text-green-700','Grześ':'bg-teal-100 text-teal-700' };
 const DIET_TAGS = ['Bezglutenowe','Glutenowe','Bezlaktozowe','Z laktozą'];
 
-let supabase = null;
+// POPRAWKA: nazwa zmieniona z "supabase" na "supabaseClient"
+// aby uniknąć konfliktu z globalnym obiektem window.supabase
+// eksportowanym przez bibliotekę @supabase/supabase-js z CDN.
+let supabaseClient = null;
 let useSupabase = false;
 let currentUser = null;
 let currentTab = 'shopping';
@@ -398,10 +401,9 @@ let recipePortions = 4;
 function initSupabase() {
   if (SUPABASE_URL !== 'TUTAJ_WKLEJ_URL' && SUPABASE_ANON_KEY !== 'TUTAJ_WKLEJ_KLUCZ') {
     try {
-      // Zmieniamy window.supabase na window.supabase.createClient, 
-      // ale przypisujemy to do globalnego obiektu window.supabaseApp, żeby nie było konfliktu nazw
-      window.supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      supabase = window.supabaseApp; // Nadpisujemy zmienną globalną bez słowa const
+      // Używamy window.supabase (obiekt biblioteki) do stworzenia klienta
+      // i zapisujemy go w naszej zmiennej supabaseClient
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       useSupabase = true;
       console.log('✅ Supabase połączone!');
     } catch(e) { console.warn('Supabase init failed, używam LocalStorage', e); }
@@ -429,7 +431,7 @@ function showToast(msg) {
 
 async function loadShopping() {
   if (useSupabase) {
-    const { data, error } = await supabase.from('shopping_list').select('*').order('created_at');
+    const { data, error } = await supabaseClient.from('shopping_list').select('*').order('created_at');
     if (!error && data) { shoppingItems = data; return; }
   }
   shoppingItems = lsGet('shopping_list', []);
@@ -438,7 +440,7 @@ async function loadShopping() {
 async function addShoppingItem(name, tags) {
   const item = { id: crypto.randomUUID(), name, added_by: currentUser, status: 'want', tags, created_at: new Date().toISOString() };
   if (useSupabase) {
-    const { data, error } = await supabase.from('shopping_list').insert(item).select().single();
+    const { data, error } = await supabaseClient.from('shopping_list').insert(item).select().single();
     if (!error && data) { shoppingItems.push(data); return; }
   }
   shoppingItems.push(item);
@@ -447,7 +449,7 @@ async function addShoppingItem(name, tags) {
 
 async function updateShoppingStatus(id, status) {
   if (useSupabase) {
-    await supabase.from('shopping_list').update({ status }).eq('id', id);
+    await supabaseClient.from('shopping_list').update({ status }).eq('id', id);
   }
   const i = shoppingItems.findIndex(x => x.id === id);
   if (i !== -1) { shoppingItems[i].status = status; lsSet('shopping_list', shoppingItems); }
@@ -455,7 +457,7 @@ async function updateShoppingStatus(id, status) {
 
 async function deleteShoppingItem(id) {
   if (useSupabase) {
-    await supabase.from('shopping_list').delete().eq('id', id);
+    await supabaseClient.from('shopping_list').delete().eq('id', id);
   }
   shoppingItems = shoppingItems.filter(x => x.id !== id);
   lsSet('shopping_list', shoppingItems);
@@ -463,7 +465,7 @@ async function deleteShoppingItem(id) {
 
 async function loadExpenses() {
   if (useSupabase) {
-    const { data, error } = await supabase.from('expenses').select('*').order('created_at');
+    const { data, error } = await supabaseClient.from('expenses').select('*').order('created_at');
     if (!error && data) { expenses = data; return; }
   }
   expenses = lsGet('expenses', []);
@@ -472,7 +474,7 @@ async function loadExpenses() {
 async function addExpense(title, amount, paid_by) {
   const item = { id: crypto.randomUUID(), title, amount: parseFloat(amount), paid_by, created_at: new Date().toISOString() };
   if (useSupabase) {
-    const { data, error } = await supabase.from('expenses').insert(item).select().single();
+    const { data, error } = await supabaseClient.from('expenses').insert(item).select().single();
     if (!error && data) { expenses.push(data); return; }
   }
   expenses.push(item);
@@ -481,7 +483,7 @@ async function addExpense(title, amount, paid_by) {
 
 async function deleteExpense(id) {
   if (useSupabase) {
-    await supabase.from('expenses').delete().eq('id', id);
+    await supabaseClient.from('expenses').delete().eq('id', id);
   }
   expenses = expenses.filter(x => x.id !== id);
   lsSet('expenses', expenses);
@@ -490,11 +492,14 @@ async function deleteExpense(id) {
 // Supabase realtime
 function setupRealtime() {
   if (!useSupabase) return;
-  supabase.channel('changes').on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_list' }, async () => {
-    await loadShopping(); renderShopping();
-  }).on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
-    await loadExpenses(); renderExpenses();
-  }).subscribe();
+  supabaseClient.channel('changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_list' }, async () => {
+      await loadShopping(); renderShopping();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
+      await loadExpenses(); renderExpenses();
+    })
+    .subscribe();
 }
 
 // ============================================================
@@ -612,7 +617,6 @@ function renderExpenses() {
   const { paid, total, perPerson, balance } = calcBalances();
   const settlements = calcSettlement(balance);
 
-  // Summary
   summary.innerHTML = `
     <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-green-50">
       <h3 class="font-display text-base font-bold text-gray-700 mb-3">📊 Podsumowanie</h3>
@@ -637,7 +641,6 @@ function renderExpenses() {
     </div>
   `;
 
-  // List
   if (expenses.length === 0) {
     container.innerHTML = `<div class="text-center py-8 text-gray-400"><i class="fas fa-receipt text-3xl mb-2 block opacity-40"></i><p class="text-sm">Brak wydatków</p></div>`;
     return;
@@ -736,7 +739,7 @@ function renderRecipeModal() {
       <button onclick="closeRecipeModal()" class="text-gray-300 hover:text-gray-600 text-2xl p-1"><i class="fas fa-times"></i></button>
     </div>
     <p class="text-sm text-gray-600 italic mb-4">${r.desc}</p>
-    
+
     <div class="flex gap-2 mb-4">
       <button onclick="setPortions(4)" class="flex-1 py-2 rounded-xl text-sm font-bold transition-all ${recipePortions===4?'bg-green-500 text-white shadow':'bg-gray-100 text-gray-600'}">
         <i class="fas fa-users mr-1"></i>Dla 4 osób
@@ -890,7 +893,6 @@ function buildApp() {
 
       <!-- PANEL: SHOPPING -->
       <div id="panel-shopping">
-        <!-- Add item form -->
         <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-green-50">
           <h3 class="font-bold text-gray-700 text-sm mb-3"><i class="fas fa-plus-circle text-green-500 mr-1"></i>Dodaj produkt</h3>
           <form id="add-item-form" onsubmit="handleAddItem(event)">
@@ -911,7 +913,6 @@ function buildApp() {
           </form>
         </div>
 
-        <!-- Filters: status -->
         <div class="mb-3">
           <p class="text-xs text-gray-400 font-bold mb-2">FILTRUJ STATUS:</p>
           <div class="flex gap-2 flex-wrap">
@@ -922,7 +923,6 @@ function buildApp() {
           </div>
         </div>
 
-        <!-- Filters: diet -->
         <div class="mb-4">
           <p class="text-xs text-gray-400 font-bold mb-2">FILTRUJ DIETĘ:</p>
           <div class="flex gap-2 flex-wrap">
@@ -936,10 +936,7 @@ function buildApp() {
 
       <!-- PANEL: EXPENSES -->
       <div id="panel-expenses" class="hidden">
-        <!-- Summary -->
         <div id="expenses-summary"></div>
-
-        <!-- Add expense form -->
         <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-amber-50">
           <h3 class="font-bold text-gray-700 text-sm mb-3"><i class="fas fa-plus-circle text-amber-500 mr-1"></i>Dodaj wydatek</h3>
           <form id="add-expense-form" onsubmit="handleAddExpense(event)">
@@ -960,7 +957,6 @@ function buildApp() {
             </button>
           </form>
         </div>
-
         <h3 class="text-xs font-bold text-gray-400 mb-2">HISTORIA WYDATKÓW:</h3>
         <div id="expenses-list"></div>
       </div>
